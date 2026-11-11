@@ -1,0 +1,45 @@
+:root { --bg: #14161d; --panel: #1f232e; --ink: #eef1f6; --muted: #98a0b3; --line: #343a4a; --pink: #ff6b9d; --amber: #ffcf5a; --paper: #f4ecd8; --paper-ink: #3b2f22;
+  --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", "Microsoft YaHei", Arial, sans-serif; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; min-height: 100vh; color: var(--ink); font-family: var(--sans); line-height: 1.55; background: radial-gradient(120% 80% at 50% 0%, #2a2f44, var(--bg) 70%); background-attachment: fixed; background-color: var(--bg); }
+.wrap { max-width: 440px; margin: 0 auto; padding: 36px 18px 60px; text-align: center; }
+h1, p { margin: 0; }
+.title { font-size: 30px; font-weight: 900; letter-spacing: .3em; padding-left: .3em; }
+.sub { color: var(--muted); letter-spacing: .2em; margin-top: 4px; }
+.lock { font-size: 96px; line-height: 1.1; margin: 28px 0 6px; filter: drop-shadow(0 0 22px rgba(255, 207, 90, .35)); transition: transform .3s; }
+.lock.shake { animation: shake .45s; }
+@keyframes shake { 20%, 60% { transform: translateX(-10px) rotate(-6deg); } 40%, 80% { transform: translateX(10px) rotate(6deg); } }
+.paper { background: var(--paper); color: var(--paper-ink); border-radius: 4px; padding: 14px 18px 12px; transform: rotate(-1.2deg); box-shadow: 0 6px 18px rgba(0, 0, 0, .45); margin: 18px auto 0; max-width: 320px; font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; }
+.paper small { display: block; font: 700 12px var(--sans); letter-spacing: .3em; opacity: .55; margin-bottom: 4px; }
+.paper b { font-size: 26px; letter-spacing: .08em; }
+form { margin-top: 26px; display: grid; gap: 12px; }
+input { width: 100%; padding: 14px 16px; border-radius: 12px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); font: 700 22px var(--sans); letter-spacing: .16em; text-align: center; outline: none; }
+input:focus { border-color: var(--pink); box-shadow: 0 0 0 4px rgba(255, 107, 157, .18); }
+button { padding: 14px 18px; border: 0; border-radius: 12px; background: var(--pink); color: #fff; font: 800 18px var(--sans); letter-spacing: .3em; box-shadow: 0 3px 0 #b83a67; cursor: pointer; }
+button:active { transform: translateY(2px); box-shadow: 0 1px 0 #b83a67; }
+.msg { min-height: 1.8em; margin-top: 12px; color: var(--pink); font-size: 16px; }
+.tries { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.open { animation: pop .7s ease-out; }
+@keyframes pop { 0% { transform: scale(.7) rotate(-12deg); } 60% { transform: scale(1.15) rotate(6deg); } 100% { transform: none; } }
+.big { font-size: 40px; font-weight: 900; margin-top: 8px; }
+.script { font: italic 800 28px Georgia, serif; color: var(--pink); transform: rotate(-4deg); margin: 2px 0 14px; }
+.lines p { font-size: 18px; margin-top: 8px; }
+.hearts { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+.hearts i { position: absolute; bottom: -30px; font-style: normal; font-size: 26px; animation: rise 3.2s ease-in forwards; }
+@keyframes rise { to { transform: translateY(-110vh) rotate(25deg); opacity: 0; } }
+
+/* the questions before the lock */
+.qhead { margin-top: 22px; font-size: 20px; }
+.qhead b { color: var(--pink); letter-spacing: .1em; }
+.intro { color: var(--muted); font-size: 15px; margin-top: 6px; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+.qcard { background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 12px 4px 10px; min-height: 108px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
+.qcard .clue { font-size: 30px; line-height: 1.25; letter-spacing: .04em; }
+.qcard .nm { margin-top: 8px; font-size: 14px; color: var(--muted); letter-spacing: .08em; word-break: break-all; }
+.qcard.got { border-color: var(--pink); background: #2d2433; }
+.qcard.got .nm { color: var(--ink); font-weight: 800; letter-spacing: 0; }
+.qcard.flip { animation: flipin .6s ease-out; }
+@keyframes flipin { 0% { transform: rotateY(90deg) scale(.9); } 100% { transform: none; } }
+input.shake { animation: shake .4s; }
+.done { margin-top: 16px; font-size: 20px; font-weight: 800; color: var(--amber); }
+button.go { margin-top: 12px; width: 100%; }

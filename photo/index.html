@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1b1a1f">
+<title>小狗跳进照片</title>
+<style>
+  :root { --ink: #4a3426; --card: #fffaf3; --pink: #f19bb8; --line: #ead8c4; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1a1f; color: var(--ink);
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  canvas#scene { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
+
+  /* the first screen: pick a photo */
+  #start { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #F6EBDD; padding: 24px; text-align: center; }
+  #start[hidden] { display: none; }
+  #startDog { width: 150px; height: 188px; background: url(assets/sit.webp) no-repeat; background-size: 600% 100%; background-position: 40% 0; }
+  #start h1 { margin: 0; font-size: 24px; }
+  #start p { margin: 0; color: #8a6a55; font-size: 14px; line-height: 1.7; }
+  .pick.alt { background: #fffaf3; color: var(--ink); border: 1.5px solid var(--line); box-shadow: none; }
+  .pick { font: inherit; font-size: 17px; font-weight: 700; border: 0; border-radius: 16px; background: var(--pink); color: #fff; padding: 13px 26px; box-shadow: 0 4px 12px #f19bb855; }
+
+  #hint { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 14px); transform: translateX(-50%); background: #fffaf3e8; border-radius: 14px; padding: 8px 14px; font-size: 14px; white-space: nowrap; box-shadow: 0 2px 10px #0000002a; pointer-events: none; transition: opacity .3s; }
+  #hint.off { opacity: 0; }
+
+  #bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 8px calc(env(safe-area-inset-bottom) + 12px); display: flex; gap: 6px; justify-content: center; }
+  #bar[hidden] { display: none; }
+  #bar button { font: inherit; font-size: 13px; border: 0; border-radius: 14px; background: #fffaf3e8; color: var(--ink); padding: 8px 4px; min-width: 0; flex: 0 1 60px; display: flex; flex-direction: column; align-items: center; gap: 1px; box-shadow: 0 2px 10px #0000002a; }
+  #bar button span { font-size: 20px; line-height: 1.15; }
+  #bar button.rec { background: #ff5468; color: #fff; }
+
+  /* the recorded clip */
+  #clip { position: fixed; inset: 0; background: #000000cc; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; }
+  #clip.on { display: flex; }
+  #clip video { max-width: 100%; max-height: 70vh; border-radius: 14px; background: #000; }
+  #clip .row { display: flex; gap: 10px; }
+  #clip button, #clip a { font: inherit; font-size: 15px; font-weight: 700; border: 0; border-radius: 14px; padding: 10px 18px; text-decoration: none; }
+  #clipSave { background: var(--pink); color: #fff; }
+  #clipClose { background: #fffaf3; color: var(--ink); }
+  #clip p { margin: 0; color: #fff; font-size: 13px; opacity: .8; text-align: center; }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<div id="start">
+  <div id="startDog"></div>
+  <h1>小狗跳进照片</h1>
+  <p>打开相机对着桌子,或者选一张照片,<br>点一下你想让她待的地方,她就会跑进来。<br><small>实况照片:在相册里点「…」→「存储为视频」,再选那段视频,她就在会动的照片里。</small></p>
+  <button class="pick" id="cam1">📷 打开相机</button>
+  <button class="pick alt" id="pick1">选照片 / 视频</button>
+</div>
+
+<div id="hint" class="off"></div>
+
+<div id="bar" hidden>
+  <button id="bCam"><span>📷</span>相机</button>
+  <button id="bPick"><span>🖼️</span>照片</button>
+  <button id="bFind"><span>🔍</span>找桌面</button>
+  <button id="bSmall"><span>➖</span>小一点</button>
+  <button id="bBig"><span>➕</span>大一点</button>
+  <button id="bRec"><span>⏺</span>录下来</button>
+</div>
+
+<div id="clip">
+  <video id="clipVideo" playsinline controls loop></video>
+  <p id="clipNote">存到相册:点「保存」,在弹出的菜单里选「存储视频」</p>
+  <div class="row"><a id="clipSave" href="#">保存</a><button id="clipClose">再玩一次</button></div>
+</div>
+
+<input type="file" id="file" accept="image/*,video/*" hidden>
+<script type="module" src="app.js"></script>
+</body>
+</html>

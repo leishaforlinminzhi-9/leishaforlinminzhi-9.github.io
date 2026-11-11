@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#5a3820">
+  <title>寻宝游戏</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%81%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="preview" class="preview-bar" hidden></div>
+  <main class="wrap">
+    <header class="top"><span class="t" id="title"></span><span id="progress"></span></header>
+    <section id="sentence" class="sentence" aria-label="拼出来的句子" hidden></section>
+    <section id="stage" aria-live="polite"></section>
+    <section id="table" aria-label="桌面"></section>
+    <section id="gifts" aria-label="礼物"></section>
+  </main>
+  <noscript><p style="color:#fff;text-align:center">需要打开 JavaScript 才能玩。</p></noscript>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

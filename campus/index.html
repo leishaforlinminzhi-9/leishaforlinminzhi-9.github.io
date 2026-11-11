@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>清华园 · 2.5D</title>
+<style>
+  :root { --paper: #f6f2e8; --ink: #3a4a42; --line: #d6d0c0; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #e9e5da; overflow: hidden; font-family: -apple-system, "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif; color: var(--ink); }
+  #stage { position: fixed; inset: 0; }
+  canvas { display: block; touch-action: none; }
+  .pill { position: fixed; background: rgba(250, 247, 238, .92); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 2px 10px rgba(60, 60, 40, .12); }
+  #title { top: 14px; left: 14px; padding: 8px 16px; font: 600 22px Georgia, "Songti SC", serif; letter-spacing: .02em; }
+  #title small { display: block; font: 12px -apple-system, sans-serif; color: #7d8a82; letter-spacing: .08em; margin-top: 1px; }
+  #tools { position: fixed; top: 14px; right: 14px; display: flex; gap: 8px; }
+  #tools button { border: 1px solid var(--line); background: rgba(250, 247, 238, .92); color: var(--ink); border-radius: 14px; padding: 10px 14px; font: 600 14px -apple-system, "PingFang SC", sans-serif; box-shadow: 0 2px 10px rgba(60, 60, 40, .12); cursor: pointer; }
+  #tools button[aria-pressed="false"] { opacity: .55; }
+  #legend { left: 14px; bottom: 14px; padding: 6px 8px; font-size: 13px; line-height: 1.5; z-index: 7; max-width: min(72vw, 250px); }
+  #legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 8px; vertical-align: -1px; }
+  #lg-toggle { border: 0; background: none; font: 600 14px -apple-system, 'PingFang SC', sans-serif; color: var(--ink); padding: 4px 6px; cursor: pointer; }
+  #lg-body { max-height: min(52vh, 380px); overflow-y: auto; margin-top: 4px; }
+  #lg-body[hidden] { display: none; }
+  #lg-body details { border-top: 1px solid var(--line); padding: 3px 2px; }
+  #lg-body summary { cursor: pointer; padding: 3px 4px; list-style: none; }
+  #lg-body summary::-webkit-details-marker { display: none; }
+  #lg-body summary::after { content: ' ▸'; color: #9aa59d; }
+  #lg-body details[open] summary::after { content: ' ▾'; }
+  #lg-body .row { padding: 3px 4px; color: #7d8a82; }
+  #lg-body .items { display: flex; flex-wrap: wrap; gap: 5px; padding: 3px 2px 6px 18px; }
+  #lg-body .items button { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 10px; padding: 3px 9px; font: 500 12.5px -apple-system, 'PingFang SC', sans-serif; cursor: pointer; }
+  #lg-body .items button:hover { background: #fff4f8; border-color: #f3c6d6; }
+  #lg-body .items button.him { background: #e8f1ff; border-color: #a9c8ef; }
+  #lg-body .items button.her { background: #ffe9f1; border-color: #f3a9c4; }
+  #hint { right: 14px; bottom: 14px; padding: 8px 12px; font-size: 12px; color: #7d8a82; }
+  #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  .tag { position: absolute; transform: translate(-50%, -100%); white-space: nowrap; background: rgba(250, 247, 238, .94); border: 1px solid var(--line); border-radius: 10px; padding: 2px 8px; font-size: 12px; box-shadow: 0 1px 5px rgba(60, 60, 40, .15); }
+  .tag.gate { background: #3a4a42; color: #f6f2e8; border-color: #3a4a42; }
+  .tag.canteen { background: #fbe3c4; border-color: #e5b27a; color: #7a4a1c; font-weight: 600; }
+  .tag.mine { pointer-events: auto; cursor: pointer; background: #ff3f86; color: #fff; border-color: #ff3f86; font-weight: 700; font-size: 13px; padding: 4px 11px; box-shadow: 0 2px 10px rgba(255, 63, 134, .45); }
+  #focus-card { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); width: auto; padding: 0; background: none; border: 0; box-shadow: none; z-index: 5; }
+  #focus-card[hidden] { display: none; }
+  #chat { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); width: min(92vw, 420px); padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, .96); border: 1px solid #f3c6d6; box-shadow: 0 6px 24px rgba(255, 63, 134, .2); z-index: 6; }
+  #chat[hidden] { display: none; }
+  #chat-faces { display: flex; gap: 4px; margin-bottom: 8px; }
+  #chat-faces button { border: 0; background: #fff4f8; font-size: 18px; width: 34px; height: 34px; border-radius: 10px; cursor: pointer; }
+  #chat-opts { max-height: 132px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 6px; }
+  #chat-opts button { border: 1px solid #f3c6d6; background: #fff4f8; color: #b3205f; font: 600 13px -apple-system, 'PingFang SC', sans-serif; padding: 6px 12px; border-radius: 12px; cursor: pointer; }
+  #chat-opts button.ghost { background: #fff; color: #7d8a82; border-color: #d6d0c0; }
+  #focus-card b { color: #d6256d; font-size: 16px; }
+  #focus-card p { margin: 4px 0 10px; font-size: 13px; line-height: 1.6; }
+  #focus-card button { border: 0; background: #ff3f86; color: #fff; font: 700 14px -apple-system, 'PingFang SC', sans-serif; padding: 8px 16px; border-radius: 12px; cursor: pointer; }
+  body.in-foot #hint { display: none; }
+  .tag.work { background: #ffe9a8; border-color: #e5c15c; color: #7a5a10; font-weight: 600; }
+  .tag.him { background: #4a86d6; color: #fff; border-color: #4a86d6; font-weight: 700; }
+  .tag.me { background: #3a4a42; color: #fff; border-color: #3a4a42; font-weight: 700; }
+  #playhint[hidden] { display: none; }
+  #playhint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); padding: 7px 14px; font-size: 13px; background: rgba(250, 247, 238, .92); border: 1px solid #d6d0c0; border-radius: 14px; z-index: 5; white-space: nowrap; }
+  .bubble { position: absolute; transform: translate(-16%, -100%); max-width: 190px; padding: 7px 11px; border-radius: 14px; background: #fff; border: 1.5px solid #f3a9c4; color: #4a2a38; font-size: 13px; line-height: 1.45; box-shadow: 0 3px 12px rgba(255, 63, 134, .22); z-index: 8; }
+  .bubble.l { transform: translate(-84%, -100%); }
+  .bubble::after { content: ''; position: absolute; bottom: -7px; left: 12%; width: 11px; height: 11px; background: #fff; border-right: 1.5px solid #f3a9c4; border-bottom: 1.5px solid #f3a9c4; transform: rotate(45deg); }
+  .bubble.l::after { left: auto; right: 12%; }
+  .bubble.cat { background: #eef6ff; border-color: #a9c8ef; color: #223a52; box-shadow: 0 3px 12px rgba(60, 100, 160, .2); }
+  .bubble.cat::after { background: #eef6ff; border-color: #a9c8ef; }
+  #vehicle { right: 14px; bottom: 14px; display: flex; gap: 6px; padding: 6px; z-index: 7; }
+  #vehicle[hidden] { display: none; }
+  #vehicle button { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 10px; padding: 7px 14px; font: 600 14px -apple-system, 'PingFang SC', sans-serif; cursor: pointer; }
+  #vehicle button[aria-pressed="true"] { background: #3a4a42; color: #fff; border-color: #3a4a42; }
+  #hunt { position: fixed; right: 14px; top: 62px; z-index: 6; padding: 8px 10px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; width: min(88vw, 360px); }
+  #hunt-clue { flex: 1 1 140px; }
+  #hunt[hidden], #treasure[hidden] { display: none; }
+  #hunt button { border: 1px solid #e5c15c; background: #fff3cf; color: #7a5a10; border-radius: 10px; padding: 4px 9px; font: 600 12px -apple-system, 'PingFang SC', sans-serif; cursor: pointer; }
+  #hunt-arrow { display: inline-block; width: 26px; height: 26px; line-height: 26px; text-align: center; border-radius: 50%; background: #ffd35c; color: #6b4a00; font-size: 15px; flex: none; transition: transform .15s; }
+  #hunt-clue { line-height: 1.4; }
+  #hunt-dist { flex: none; font-size: 11px; color: #9a7a2a; white-space: nowrap; }
+  #treasure { position: fixed; inset: 0; z-index: 12; display: grid; place-items: center; background: rgba(40, 34, 20, .42); }
+  #treasure > div { width: min(88vw, 380px); padding: 22px 22px 18px; border-radius: 20px; background: #fffaf0; border: 2px solid #f0cf72; box-shadow: 0 12px 40px rgba(80, 60, 10, .35); text-align: center; }
+  #treasure h2 { margin: 0 0 8px; font: 700 20px Georgia, 'Songti SC', serif; color: #8a5d00; }
+  #hunt-bag { position: fixed; right: 14px; top: 170px; z-index: 6; padding: 6px 12px; font: 600 13px -apple-system, 'PingFang SC', sans-serif; color: #7a5a10; cursor: pointer; }
+  #hunt-bag[hidden] { display: none; }
+  #tr-item { font-size: 54px; line-height: 1.1; }
+  #tr-ask p { font-weight: 600; margin-bottom: 8px; }
+  #tr-opts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 8px; }
+  #tr-opts button { background: #fff3cf; color: #7a5a10; border: 1px solid #e5c15c; font-size: 14px; padding: 7px 14px; margin: 0; }
+  #tr-reply { color: #8a5d00; font-weight: 600; }
+  #tr-text .it { display: block; text-align: left; margin: 4px 0; font-size: 14px; }
+  .tr-reward { display: block; margin: 6px auto 0; padding: 10px 22px; border: 0; border-radius: 999px; background: #ff7a93; color: #fff; font: 700 16px system-ui, sans-serif; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 90, 120, .35); }
+  #reward { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: #000; }
+  #reward[hidden] { display: none; }
+  #reward video { width: min(100vw, 100vh); height: min(100vw, 100vh); background: #000; }
+  #reward button { position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .85); font-size: 18px; cursor: pointer; }
+  #treasure p { margin: 0 0 12px; font-size: 15px; line-height: 1.7; white-space: pre-line; }
+  #treasure .next { font-size: 13px; color: #7d6a3c; background: #fff3cf; border-radius: 12px; padding: 8px 12px; }
+  #treasure button { border: 0; background: #ffb200; color: #fff; font: 700 15px -apple-system, 'PingFang SC', sans-serif; padding: 9px 22px; border-radius: 14px; cursor: pointer; margin-top: 4px; }
+  .tag.sport { background: rgba(244, 233, 150, .95); }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; background: #e9e5da; font: 600 18px Georgia, serif; letter-spacing: .1em; transition: opacity .5s; }
+</style>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<div id="stage"></div><div id="labels"></div>
+<div class="pill" id="title">清华园<small>TSINGHUA · 2.5D</small></div>
+<div id="tools"><button id="btn-labels" aria-pressed="true">地名</button><button id="btn-spin" aria-pressed="false">旋转</button><button id="btn-reset">复位</button></div>
+<div class="pill" id="legend"><button id="lg-toggle" aria-expanded="false">📍 地点 ▸</button><div id="lg-body" hidden></div></div>
+<div class="pill" id="hint">拖动旋转 · 双指缩放 · 点粉色宿舍</div>
+<div id="focus-card" hidden><button id="foot-back">返回校园</button></div>
+<div id="playhint" hidden>点地图上的地方,小猫骑车过去 · 点小狗聊天</div>
+<div id="chat" hidden><div id="chat-opts"></div></div>
+<div class="pill" id="hunt" hidden><span id="hunt-arrow">➤</span><span id="hunt-clue"></span><span id="hunt-dist"></span><button id="hunt-hint">提示</button></div>
+<button class="pill" id="hunt-bag" hidden>🎒 0/0</button>
+<div id="treasure" hidden><div><div id="tr-item"></div><h2 id="tr-title"></h2><div id="tr-ask" hidden><p id="tr-q"></p><div id="tr-opts"></div></div><p id="tr-reply" hidden></p><p id="tr-text"></p><p class="next" id="tr-next" hidden></p><button id="tr-ok">收下</button></div></div>
+<div id="vehicle" class="pill" hidden><button data-v="nine" aria-pressed="true">九号</button><button data-v="yadea" aria-pressed="false">雅迪</button></div>
+<div id="loading">清华园 · 正在搭建…</div>
+<script type="module">import('./app.js?v=' + Date.now());</script>
+</body>
+</html>

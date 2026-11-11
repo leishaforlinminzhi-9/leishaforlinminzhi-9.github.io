@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>拼贴诗</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@900&family=Noto+Serif+SC:wght@700;900&family=ZCOOL+KuaiLe&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #2a2320; --paper: #f6f0e3; --desk: #d9cbb4; --her: #f19bb8; --him: #8fb0cf; --soft: #7a6a5c;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    background: var(--desk) radial-gradient(circle at 30% 20%, #e6dac6, #cdbb9f 80%);
+    color: var(--ink); font: 16px/1.5 -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
+    -webkit-user-select: none; user-select: none; touch-action: none;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .screen { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center;
+    padding: max(12px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom)); }
+  .screen.on { display: flex; }
+  .btn { border: 0; border-radius: 999px; padding: 11px 20px; background: var(--ink); color: #fff8ec; font-weight: 600;
+    box-shadow: 0 2px 0 rgba(0,0,0,.25); }
+  .btn.light { background: #fff8ec; color: var(--ink); }
+  .btn:disabled { opacity: .35; }
+  .btn:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+  .avatar { width: 64px; height: 64px; border-radius: 50%; background: #fff8ec center/cover; flex: none; }
+  .avatar.dog { background-image: url(assets/dog.webp); }
+  .avatar.cat { background-image: url(assets/cat.webp); }
+
+  /* start */
+  #start { justify-content: center; gap: 18px; text-align: center; overflow-y: auto; }
+  #start h1 { margin: 0; font: 900 52px/1.1 "Noto Serif SC", serif; letter-spacing: 6px; }
+  #start h1 span { display: inline-block; padding: 2px 8px; margin: 0 2px; }
+  #start .sub { margin: 0; color: var(--soft); max-width: 320px; }
+  .who { display: flex; gap: 16px; }
+  .who .avatar { width: 84px; height: 84px; box-shadow: 0 3px 0 rgba(0,0,0,.12); }
+  .who .avatar + .avatar { margin-left: -14px; }
+  #newGame { font-size: 18px; padding: 13px 44px; }
+  .start-more { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  /* play */
+  #play { padding-left: 8px; padding-right: 8px; gap: 8px; }
+  .bar { width: 100%; max-width: 760px; display: flex; align-items: center; gap: 10px; }
+  .bar .pair { display: flex; flex: none; }
+  .bar .avatar { width: 38px; height: 38px; }
+  .bar .avatar + .avatar { margin-left: -10px; }
+  .bar .turn { flex: 1; line-height: 1.25; }
+  .bar .turn b { display: block; }
+  .bar .turn small { color: var(--soft); }
+  .bar .btn { padding: 8px 14px; font-size: 14px; }
+  .board { position: relative; flex: none; background: var(--paper); box-shadow: 0 6px 18px rgba(60,40,20,.25), 0 1px 2px rgba(0,0,0,.2);
+    background-image: radial-gradient(rgba(120,90,60,.07) 1px, transparent 1.2px); background-size: 7px 7px; overflow: hidden; }
+  .board .hint[hidden] { display: none; }
+  .board .hint { position: absolute; inset: 0; display: grid; place-items: center; color: #b8a88f; font-size: 15px; text-align: center; padding: 20px; pointer-events: none; }
+  .tray { width: 100%; max-width: 760px; flex: 1; min-height: 0; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center;
+    gap: 6px; padding: 4px 2px; overflow-y: auto; touch-action: pan-y; }
+
+  /* a word cut out of a magazine */
+  .tile { position: absolute; left: 0; top: 0; white-space: nowrap; line-height: 1; touch-action: none; cursor: grab;
+    filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.28)); }
+  .tray .tile { position: relative; }
+  .tray .stock { width: 100%; display: flex; justify-content: center; gap: 6px; padding-bottom: 5px; margin-bottom: 1px; border-bottom: 1px dashed rgba(42,35,32,.18); }
+  .tile .cut { display: block; }
+  .tile .tape { position: absolute; height: 34%; width: 46%; min-width: 16px; top: -14%; opacity: .78; pointer-events: none; }
+  .tile.mine-0 .tape { background: var(--her); }
+  .tile.mine-1 .tape { background: var(--him); }
+  .tile.dragging { z-index: 50; filter: drop-shadow(0 8px 10px rgba(0,0,0,.3)); cursor: grabbing; }
+  .ghost { position: fixed; z-index: 60; pointer-events: none; }
+
+  /* finish: hold the two hearts together */
+  #finish { justify-content: center; gap: 22px; text-align: center; background: rgba(42,35,32,.9); color: #fff8ec; z-index: 6; }
+  #finish h2 { margin: 0; font: 900 26px "Noto Serif SC", serif; }
+  .hearts { display: flex; gap: 22px; }
+  .heart { width: 136px; height: 150px; border: 0; background: none; position: relative; display: grid; justify-items: center; touch-action: none; }
+  .heart svg { width: 120px; height: 110px; transition: transform .15s; }
+  .heart svg path { fill: rgba(255,255,255,.15); stroke: #fff8ec; stroke-width: 3; transition: fill .15s; }
+  .heart.held svg { transform: scale(1.08); }
+  .heart.held svg path { fill: #ef5d7d; }
+  .heart .avatar { position: absolute; top: 24px; width: 56px; height: 56px; pointer-events: none; }
+  .heart span { font-size: 14px; opacity: .85; }
+  .meter { width: 240px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.2); overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; background: #ef5d7d; }
+
+  /* result / view */
+  #done { gap: 12px; overflow-y: auto; touch-action: pan-y; justify-content: flex-start; }
+  #done img { width: min(100%, 520px); height: auto; box-shadow: 0 6px 18px rgba(60,40,20,.28); -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; flex: none; }
+  #done .poem { white-space: pre-wrap; font: 700 17px/1.7 "Noto Serif SC", serif; text-align: center; margin: 0; }
+  #done .row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  #done .note { color: var(--soft); font-size: 13px; margin: 0; text-align: center; }
+
+  /* wall */
+  #wall { gap: 12px; }
+  #wall .bar h2 { flex: 1; margin: 0; font: 900 24px "Noto Serif SC", serif; }
+  .grid { width: 100%; max-width: 760px; flex: 1; overflow-y: auto; touch-action: pan-y; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  .grid .hangall { grid-column: 1 / -1; justify-self: center; }
+    gap: 18px 14px; padding: 8px 4px 20px; align-content: start; }
+  .pin { border: 0; background: none; padding: 0; text-align: left; }
+  .pin img { width: 100%; display: block; box-shadow: 0 4px 10px rgba(60,40,20,.25); background: var(--paper); aspect-ratio: 3/4; }
+  .pin:nth-child(3n+1) img { transform: rotate(-1.5deg); }
+  .pin:nth-child(3n+2) img { transform: rotate(1.2deg); }
+  .pin small { display: block; margin-top: 6px; color: var(--soft); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .empty { grid-column: 1 / -1; text-align: center; color: var(--soft); padding-top: 60px; }
+
+  /* sheet */
+  .sheet { position: fixed; inset: 0; display: none; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.35); z-index: 8; }
+  .sheet.on { display: flex; }
+  .sheet > div { width: 100%; max-width: 460px; background: #fff8ec; border-radius: 18px 18px 0 0; padding: 20px 20px max(20px, env(safe-area-inset-bottom)); display: grid; gap: 12px; }
+  .sheet h3 { margin: 0; font: 900 20px "Noto Serif SC", serif; }
+  .sheet p { margin: 0; color: var(--soft); font-size: 14px; }
+  .sheet input[type=date] { font: inherit; padding: 8px 10px; border: 1px solid #cdbb9f; border-radius: 10px; background: #fff; }
+  .sheet .row { display: flex; gap: 10px; }
+  .sheet .row .btn { flex: 1; }
+  #toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: var(--ink); color: #fff8ec; padding: 9px 16px; border-radius: 999px;
+    font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 9; max-width: 86vw; text-align: center; }
+  #toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+
+<section class="screen" id="start">
+  <h1 id="logo"></h1>
+  <div class="who"><i class="avatar dog"></i><i class="avatar cat"></i></div>
+  <p class="sub">从我们说过的话里剪下一些词。一张纸,两个人一起往上贴,拼成一首诗。</p>
+  <button class="btn" id="newGame">开始拼</button>
+  <div class="start-more">
+    <button class="btn light" id="resume" hidden>接着拼上一首</button>
+    <button class="btn light" data-go="wall">诗集墙</button>
+  </div>
+</section>
+
+<section class="screen" id="play">
+  <div class="bar">
+    <span class="pair"><i class="avatar dog"></i><i class="avatar cat"></i></span>
+    <div class="turn"><b>一起拼</b><small>拖上纸;拖回来就拿掉</small></div>
+    <button class="btn light" id="redraw">换一把</button>
+    <button class="btn" id="finishBtn">拼好了</button>
+  </div>
+  <div class="board" id="board"><div class="hint" id="boardHint">把下面的词拖到纸上</div></div>
+  <div class="tray" id="tray"></div>
+</section>
+
+<section class="screen" id="finish">
+  <h2>两个人一起按住</h2>
+  <p style="margin:0;opacity:.8">一人按一颗,一起按住,这首诗就拼好了</p>
+  <div class="hearts">
+    <button class="heart" data-h="0"><svg viewBox="0 0 120 110"><path d="M60 102C26 78 6 58 6 34 6 18 18 6 34 6c11 0 20 6 26 15C66 12 75 6 86 6c16 0 28 12 28 28 0 24-20 44-54 68z"/></svg><i class="avatar dog"></i><span>小狗</span></button>
+    <button class="heart" data-h="1"><svg viewBox="0 0 120 110"><path d="M60 102C26 78 6 58 6 34 6 18 18 6 34 6c11 0 20 6 26 15C66 12 75 6 86 6c16 0 28 12 28 28 0 24-20 44-54 68z"/></svg><i class="avatar cat"></i><span>小猫</span></button>
+  </div>
+  <div class="meter"><i id="meter"></i></div>
+  <button class="btn light" id="finishBack">还没拼完</button>
+</section>
+
+<section class="screen" id="done">
+  <img id="doneImg" alt="拼贴诗">
+  <p class="poem" id="donePoem"></p>
+  <div class="row" id="doneActions"></div>
+  <p class="note" id="doneNote"></p>
+</section>
+
+<section class="screen" id="wall">
+  <div class="bar"><h2>诗集墙</h2><button class="btn light" data-go="start">回去</button></div>
+  <div class="grid" id="grid"></div>
+</section>
+
+<div class="sheet" id="calSheet"><div>
+  <h3>挂到爱的日历</h3>
+  <p>这首诗会作为一条「回音」挂在这一天,点「点开看看」能看到这张拼贴。</p>
+  <input type="date" id="calDate">
+  <p id="calMsg"></p>
+  <div class="row"><button class="btn light" id="calCancel">算了</button><button class="btn" id="calGo">挂上去</button></div>
+</div></div>
+
+<div id="toast"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
