@@ -76,15 +76,17 @@
   .thead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; border-bottom: 2px solid var(--c); padding-bottom: 4px; margin-bottom: 6px; }
   .thead b { color: var(--c); font-size: 15px; }
   .thead span { color: var(--soft); font-size: 13px; }
-  .prows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; row-gap: 2px; }
-  .prow { display: grid; grid-template-columns: 4.4em minmax(0, 1fr) 1.6em; align-items: center; gap: 6px; font-size: 14px; min-height: 26px; }
-  .prow .pn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .prow .pn small { color: var(--soft); font-size: 11px; }
-  .prow .bar { height: 6px; background: var(--chip); border-radius: 3px; overflow: hidden; }
-  .prow .bar i { display: block; height: 100%; background: var(--c); border-radius: 3px; }
-  .prow .pc { text-align: right; font-variant-numeric: tabular-nums; }
-  .prow.zero { color: var(--soft); }
-  .prow.zero .pc { font-weight: 400; }
+  .ptable { display: grid; grid-template-columns: minmax(0, 1fr) 3.8em 3.8em; align-items: center; font-size: 14px; }
+  .ptable > span { padding: 4px 0; border-top: 1px solid var(--line); }
+  .ptable .th { border-top: 0; padding-top: 0; color: var(--soft); font-size: 12px; text-align: right; }
+  .ptable .pn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ptable .pn small { color: var(--soft); font-size: 11px; }
+  .ptable .n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .ptable .zero { color: var(--soft); font-weight: 400; }
+  .tnote { margin-top: 4px; color: var(--soft); font-size: 12px; }
+  .chip:disabled { opacity: .3; }
+  .lbl .right { display: flex; align-items: center; gap: 4px; }
+  .lbl .right b { color: var(--ink); }
 
   .log { list-style: none; margin: 0; padding: 0; }
   .log li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
@@ -144,10 +146,10 @@
     <h2>记一分</h2>
     <div class="step" id="pairStep"><div class="lbl">对战</div><div id="pairs" class="pairs"></div></div>
     <div class="step"><div class="lbl">哪队得分</div><div id="scorers"></div></div>
-    <div class="step" id="assistStep" hidden><div class="lbl"><span>谁助攻的</span><button id="cancelPick" class="link" type="button">取消</button></div><div id="assists"></div></div>
+    <div class="step" id="assistStep" hidden><div class="lbl"><span id="whoLabel">谁助攻的</span><span class="right"><span id="picked"></span><button id="cancelPick" class="link" type="button">取消</button></span></div><div id="assists"></div></div>
   </section>
 
-  <section class="card needs-game"><h2>助攻</h2><div id="stats" class="stats"></div></section>
+  <section class="card needs-game"><h2>得分和助攻</h2><div id="stats" class="stats"></div></section>
   <section class="card needs-game"><h2>每一分 <small id="count"></small></h2><ol id="log" class="log"></ol></section>
 
   <footer class="tools needs-game">

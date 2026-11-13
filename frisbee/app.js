@@ -1,5 +1,5 @@
-// 飞盘计分: teams take turns, and for every point the phone records which two teams were on, which of them scored and
-// who threw the assist. Points are saved on the love-calendar server (POST /api/frisbee/*), so every phone shows the
+// 飞盘计分: teams take turns, and for every point the phone records which two teams were on, which of them scored, who
+// threw the assist and who caught it. Points are saved on the love-calendar server (POST /api/frisbee/*), so every phone shows the
 // same numbers. A point recorded without signal waits on this phone (`ops`, kept in localStorage) and goes up as soon
 // as the server answers; every point carries its own random id, so sending it twice still counts it once.
 
@@ -52,6 +52,8 @@ const pairsOf = (n) => { const out = []; for (let a = 0; a < n; a++) for (let b 
 const dayOf = (t) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const dayLabel = (k) => `${Number(k.slice(5, 7))}月${Number(k.slice(8, 10))}日`;
 const clock = (t) => new Date(t).toTimeString().slice(0, 5);
+// who threw the assist and who caught it (points recorded before the scorer was asked for have no goal)
+const who = (p) => `${p.assist ? `助攻 ${p.assist}` : '无助攻'} · ${p.goal ? `得分 ${p.goal}` : '得分没记'}`;
 
 // the server's points with this phone's unconfirmed writes laid on top, oldest first
 function allPoints() {
@@ -66,8 +68,9 @@ function allPoints() {
 }
 
 function tally(list, n) {
-  const score = Array(n).fill(0), lost = Array(n).fill(0), none = Array(n).fill(0);
+  const score = Array(n).fill(0), lost = Array(n).fill(0), none = Array(n).fill(0), unknown = Array(n).fill(0);
   const assists = Array.from({ length: n }, () => new Map());
+  const goals = Array.from({ length: n }, () => new Map());
   const pair = new Map(); // 'x-y' (x < y) -> [points of x, points of y]
   const after = new Map(); // point id -> [x, y, points of x, points of y] right after that point
   for (const p of list) {
@@ -76,13 +79,15 @@ function tally(list, n) {
     lost[p.team === p.a ? p.b : p.a]++;
     if (p.assist) assists[p.team].set(p.assist, (assists[p.team].get(p.assist) ?? 0) + 1);
     else none[p.team]++;
+    if (p.goal) goals[p.team].set(p.goal, (goals[p.team].get(p.goal) ?? 0) + 1);
+    else unknown[p.team]++;
     const x = Math.min(p.a, p.b), y = Math.max(p.a, p.b);
     const s = pair.get(`${x}-${y}`) ?? [0, 0];
     s[p.team === x ? 0 : 1]++;
     pair.set(`${x}-${y}`, s);
     after.set(p.id, [x, y, s[0], s[1]]);
   }
-  return { score, lost, none, assists, pair, after };
+  return { score, lost, none, unknown, assists, goals, pair, after };
 }
 
 // ---------- drawing ----------
@@ -136,7 +141,7 @@ function renderRecord(n, all) {
   const pairs = pairsOf(n);
   if (n === 2) pick.pair = [0, 1];
   else if (pick.pair && !pairs.some(([a, b]) => a === pick.pair[0] && b === pick.pair[1])) pick.pair = null;
-  if (pick.team !== null && !pick.pair?.includes(pick.team)) pick.team = null;
+  if (pick.team !== null && !pick.pair?.includes(pick.team)) pick = { pair: pick.pair, team: null };
   $('#pairStep').hidden = n <= 2;
   $('#pairs').style.gridTemplateColumns = `repeat(${Math.min(3, pairs.length)}, minmax(0, 1fr))`;
   $('#pairs').replaceChildren(...pairs.map(([a, b]) => {
@@ -164,27 +169,37 @@ function renderRecord(n, all) {
   step.hidden = pick.team === null;
   if (pick.team === null) return;
   const tm = teams()[pick.team];
-  const chip = (name) => h('button', { type: 'button', class: 'chip', style: `--c:${color(pick.team)}`, onclick: () => record(name) }, name);
+  // the same roster is tapped twice: first who threw the assist, then who caught it (the thrower greyed out). The
+  // buttons stay where they are, so a quick second tap can only land on the greyed one.
+  const forGoal = pick.assist !== undefined;
+  $('#whoLabel').textContent = forGoal ? '谁得分的' : '谁助攻的';
+  $('#picked').replaceChildren(...(forGoal ? ['助攻 ', h('b', {}, pick.assist ?? '无'), ' ', h('button', { type: 'button', class: 'link', onclick: () => { pick.assist = undefined; render(); } }, '改'), ' · '] : []));
+  const chip = (name) => h('button', { type: 'button', class: 'chip', style: `--c:${color(pick.team)}`, disabled: forGoal && name === pick.assist, onclick: () => (forGoal ? record(name) : chooseAssist(name)) }, name);
   // one roster row = one line of buttons (5 across when a row has 5 people), so the two rows stay as she wrote them
   const cols = `grid-template-columns:repeat(${Math.min(5, Math.max(4, ...tm.groups.map((g) => g.length)))}, minmax(0, 1fr))`;
   $('#assists').replaceChildren(
     ...tm.groups.filter((g) => g.length).map((g) => h('div', { class: 'chips', style: cols }, ...g.map(chip))),
-    h('div', { class: 'chips', style: cols }, h('button', { type: 'button', class: 'chip none', onclick: () => record(null) }, '无助攻')));
+    h('div', { class: 'chips', style: cols }, h('button', { type: 'button', class: 'chip none', onclick: () => (forGoal ? record(null) : chooseAssist(null)) }, forGoal ? '不记得' : '无助攻')));
   if (wasHidden) step.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
+// every player's goals and assists, team by team, the busiest first
 function renderStats(ts, t) {
-  const max = Math.max(1, ...t.assists.flatMap((m) => [...m.values()]));
   $('#stats').replaceChildren(...ts.map((tm, i) => {
     const roster = tm.groups.flat();
     // names that are not on the roster any more (renamed after they were recorded) still count
-    const names = [...roster, ...[...t.assists[i].keys()].filter((k) => !roster.includes(k))];
-    const rows = names.map((name, k) => ({ name, k, c: t.assists[i].get(name) ?? 0, gone: !roster.includes(name) })).sort((x, y) => y.c - x.c || x.k - y.k);
-    const total = rows.reduce((sum, r) => sum + r.c, 0);
-    const row = (label, c, extra) => h('div', { class: 'prow' + (c ? '' : ' zero') }, h('span', { class: 'pn' }, label, extra), h('span', { class: 'bar' }, h('i', { style: `width:${(c / max) * 100}%` })), h('b', { class: 'pc' }, String(c)));
+    const extra = [...new Set([...t.goals[i].keys(), ...t.assists[i].keys()])].filter((k) => !roster.includes(k));
+    const rows = [...roster, ...extra]
+      .map((name, k) => ({ name, k, g: t.goals[i].get(name) ?? 0, a: t.assists[i].get(name) ?? 0, gone: k >= roster.length }))
+      .sort((x, y) => y.g + y.a - (x.g + x.a) || y.g - x.g || x.k - y.k);
+    const notes = [t.none[i] ? `无助攻 ${t.none[i]} 次` : '', t.unknown[i] ? `得分没记 ${t.unknown[i]} 次` : ''].filter(Boolean).join(' · ');
+    const num = (v) => h('span', { class: 'n' + (v ? '' : ' zero') }, String(v));
     return h('div', { style: `--c:${color(i)}` },
-      h('div', { class: 'thead' }, h('b', {}, tm.name), h('span', {}, `得 ${t.score[i]} 分 · 助攻 ${total} 次`)),
-      h('div', { class: 'prows' }, ...rows.map((r) => row(r.name, r.c, r.gone ? h('small', {}, ' 旧名') : null)), t.none[i] ? row('无助攻', t.none[i]) : null));
+      h('div', { class: 'thead' }, h('b', {}, tm.name), h('span', {}, `得 ${t.score[i]} 分`)),
+      h('div', { class: 'ptable' },
+        h('span', { class: 'th' }), h('span', { class: 'th' }, '得分'), h('span', { class: 'th' }, '助攻'),
+        ...rows.flatMap((r) => [h('span', { class: 'pn' + (r.g + r.a ? '' : ' zero') }, r.name, r.gone ? h('small', {}, ' 旧名') : null), num(r.g), num(r.a)])),
+      notes ? h('div', { class: 'tnote' }, notes) : null);
   }));
 }
 
@@ -198,10 +213,10 @@ function renderLog(list, t) {
           h('span', { class: 'no' }, `#${num.get(p.id)}`),
           h('div', { class: 'what' },
             h('div', {}, h('b', {}, `${teamName(p.team)}得分`), h('span', { class: 'sc' }, `${teamName(x)} ${sx} : ${sy} ${teamName(y)}`)),
-            h('div', { class: 'sub' }, `${p.assist ? `${p.assist} 助攻` : '无助攻'} · ${clock(p.at)}${p.pending ? ' · 等待上传' : ''}`)),
+            h('div', { class: 'sub' }, `${who(p)} · ${clock(p.at)}${p.pending ? ' · 等待上传' : ''}`)),
           h('button', { type: 'button', class: 'del', 'aria-label': `删掉第 ${num.get(p.id)} 分`, onclick: () => removePoint(p, num.get(p.id)) }, '×'));
       })
-    : [h('li', { class: 'emptyrow' }, '还没有记分。打完一分，在上面点得分的队和助攻的人。')]));
+    : [h('li', { class: 'emptyrow' }, '还没有记分。打完一分，在上面点得分的队、助攻的人和得分的人。')]));
 }
 
 function renderSync() {
@@ -240,26 +255,34 @@ function choosePair(a, b) {
 }
 
 function chooseTeam(i) {
-  pick.team = pick.team === i ? null : i;
+  pick = { pair: pick.pair, team: pick.team === i ? null : i };
   render();
   if (pick.team !== null) poll(); // fresh numbers before the assist is picked: another phone may have just recorded this point
 }
 
-function record(assist) {
-  if (Date.now() - lastRecord < 700 || pick.team === null || !pick.pair) return; // a double tap records once
-  const [a, b] = pick.pair, team = pick.team;
+// first tap on the roster: who threw the assist (null = no assist); the next tap says who caught it
+function chooseAssist(name) {
+  pick.assist = name;
+  pick.assistAt = Date.now();
+  render();
+}
+
+function record(goal) {
+  // a double tap records once, and a tap right after the assist was chosen is the same finger, not the scorer
+  if (Date.now() - lastRecord < 700 || Date.now() - (pick.assistAt ?? 0) < 350 || pick.team === null || !pick.pair || pick.assist === undefined) return;
+  const [a, b] = pick.pair, team = pick.team, assist = pick.assist;
   const twin = allPoints().filter((p) => p.by !== me && Date.now() - p.at < TWIN_MS && Math.min(p.a, p.b) === a && Math.max(p.a, p.b) === b).at(-1);
-  if (twin && !confirm(`${Math.max(1, Math.round((Date.now() - twin.at) / 1000))} 秒前，别的手机刚记了一分：${teamName(twin.team)}得分${twin.assist ? `，${twin.assist}助攻` : ''}。\n\n这是另外一分吗？点「确定」也记上，点「取消」就不记了。`)) {
-    pick.team = null;
+  if (twin && !confirm(`${Math.max(1, Math.round((Date.now() - twin.at) / 1000))} 秒前，别的手机刚记了一分：${teamName(twin.team)}得分（${who(twin)}）。\n\n这是另外一分吗？点「确定」也记上，点「取消」就不记了。`)) {
+    pick = { pair: pick.pair, team: null };
     render();
     return;
   }
   lastRecord = Date.now();
-  const g = srv.game, point = { id: rid(12), at: Date.now(), a, b, team, assist, by: me };
-  pick.team = null;
+  const g = srv.game, point = { id: rid(12), at: Date.now(), a, b, team, assist, goal, by: me };
+  pick = { pair: pick.pair, team: null };
   view = 'auto';
   queue({ op: 'add', game: g, point });
-  toast(`${teamName(team)} +1 · ${assist ? `${assist}助攻` : '无助攻'}`, () => unqueueOr(g, point.id, true));
+  toast(`${teamName(team)} +1 · ${who(point)}`, () => unqueueOr(g, point.id, true));
 }
 
 // take back a point: if it is still waiting on this phone just forget it, otherwise ask the server
@@ -276,7 +299,7 @@ function unqueueOr(g, id, deleted) {
 }
 
 function removePoint(p, num) {
-  if (!confirm(`删掉第 ${num} 分？\n${teamName(p.team)}得分，${p.assist ? `${p.assist}助攻` : '无助攻'}，${clock(p.at)}`)) return;
+  if (!confirm(`删掉第 ${num} 分？\n${teamName(p.team)}得分（${who(p)}），${clock(p.at)}`)) return;
   const undo = unqueueOr(srv.game, p.id, true);
   toast(`删掉了第 ${num} 分`, undo);
 }
@@ -446,7 +469,7 @@ function openRoster(mode) {
   $('#rosterText').value = srv ? rosterText(srv.info.teams) : DEFAULT_ROSTER;
   $('#rosterNote').textContent = rosterMode === 'new'
     ? srv ? '开了以后，打开这个网页的手机都会换到新的一场；这一场的记录还在，「以前的比赛」里能看到。' : ''
-    : allPoints().length ? '改了名字以后，已经记下的助攻还算在原来的名字上（显示「旧名」）。' : '';
+    : allPoints().length ? '改了名字以后，已经记下的得分和助攻还算在原来的名字上（显示「旧名」）。' : '';
   previewRoster();
   $('#rosterDlg').showModal();
 }
@@ -518,7 +541,7 @@ function setUrl(g) {
 // ---------- start ----------
 
 $('#sync').addEventListener('click', () => { flush(); poll(); });
-$('#cancelPick').addEventListener('click', () => { pick.team = null; render(); });
+$('#cancelPick').addEventListener('click', () => { pick = { pair: pick.pair, team: null }; render(); });
 $('#editBtn').addEventListener('click', () => openRoster('edit'));
 $('#newBtn').addEventListener('click', () => openRoster('new'));
 $('#gamesBtn').addEventListener('click', openGames);
