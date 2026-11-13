@@ -146,7 +146,7 @@
     <h2>记一分</h2>
     <div class="step" id="pairStep"><div class="lbl">对战</div><div id="pairs" class="pairs"></div></div>
     <div class="step"><div class="lbl">哪队得分</div><div id="scorers"></div></div>
-    <div class="step" id="assistStep" hidden><div class="lbl"><span id="whoLabel">谁助攻的</span><span class="right"><span id="picked"></span><button id="cancelPick" class="link" type="button">取消</button></span></div><div id="assists"></div></div>
+    <div class="step" id="assistStep" hidden><div class="lbl"></div><div id="assists"></div></div>
   </section>
 
   <section class="card needs-game"><h2>得分和助攻</h2><div id="stats" class="stats"></div></section>
@@ -179,6 +179,7 @@
   </form>
 </dialog>
 
-<script type="module" src="app.js"></script>
+<!-- bump v whenever app.js changes: phones keep files for 10 minutes, and a new page must not run an old script -->
+<script type="module" src="app.js?v=3"></script>
 </body>
 </html>

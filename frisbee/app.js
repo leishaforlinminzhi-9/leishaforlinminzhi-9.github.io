@@ -172,8 +172,12 @@ function renderRecord(n, all) {
   // the same roster is tapped twice: first who threw the assist, then who caught it (the thrower greyed out). The
   // buttons stay where they are, so a quick second tap can only land on the greyed one.
   const forGoal = pick.assist !== undefined;
-  $('#whoLabel').textContent = forGoal ? '谁得分的' : '谁助攻的';
-  $('#picked').replaceChildren(...(forGoal ? ['助攻 ', h('b', {}, pick.assist ?? '无'), ' ', h('button', { type: 'button', class: 'link', onclick: () => { pick.assist = undefined; render(); } }, '改'), ' · '] : []));
+  // the label row is drawn here rather than in the HTML, so it also works under an older cached copy of the HTML
+  $('#assistStep .lbl').replaceChildren(
+    h('span', {}, forGoal ? '谁得分的' : '谁助攻的'),
+    h('span', { class: 'right' },
+      ...(forGoal ? ['助攻 ', h('b', {}, pick.assist ?? '无'), ' ', h('button', { type: 'button', class: 'link', onclick: () => { pick.assist = undefined; render(); } }, '改'), ' · '] : []),
+      h('button', { type: 'button', class: 'link', onclick: () => { pick = { pair: pick.pair, team: null }; render(); } }, '取消')));
   const chip = (name) => h('button', { type: 'button', class: 'chip', style: `--c:${color(pick.team)}`, disabled: forGoal && name === pick.assist, onclick: () => (forGoal ? record(name) : chooseAssist(name)) }, name);
   // one roster row = one line of buttons (5 across when a row has 5 people), so the two rows stay as she wrote them
   const cols = `grid-template-columns:repeat(${Math.min(5, Math.max(4, ...tm.groups.map((g) => g.length)))}, minmax(0, 1fr))`;
@@ -541,7 +545,6 @@ function setUrl(g) {
 // ---------- start ----------
 
 $('#sync').addEventListener('click', () => { flush(); poll(); });
-$('#cancelPick').addEventListener('click', () => { pick = { pair: pick.pair, team: null }; render(); });
 $('#editBtn').addEventListener('click', () => openRoster('edit'));
 $('#newBtn').addEventListener('click', () => openRoster('new'));
 $('#gamesBtn').addEventListener('click', openGames);
