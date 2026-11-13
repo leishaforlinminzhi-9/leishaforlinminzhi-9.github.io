@@ -7,7 +7,7 @@ const params = new URLSearchParams(location.search);
 // the Netlify address first: *.workers.dev cannot be reached from mainland China
 const APIS = params.get('api')?.split(',') ?? (location.hostname.endsWith('github.io') ? ['https://frabjous-boba-2c325c.netlify.app', 'https://love-calendar-api.linmz21.workers.dev'] : [location.origin]);
 const COLORS = ['#1f6fd1', '#e0560b', '#12805c', '#8e44ad'];
-const DEFAULT_ROSTER = 'A队：梵高 锅锅 嘉旺 德华 未来 ｜ 慧琳 安琪 可欣 末妍\nB队：嘉树 乐陶 铭艺 周周 ｜ 红 乐乐 彦臻 橙子\nC队：苏昊 一凡 宇栋 嘉康 ｜ 晓玲姐 思涵 昕悦 Gia';
+const DEFAULT_ROSTER = 'A队：梵高 锅锅 嘉旺 德华 未来 ｜ 榴莲 安琪 可欣 末妍\nB队：嘉树 乐陶 铭艺 周周 ｜ 红 乐乐 彦臻 橙子\nC队：苏昊 一凡 宇栋 嘉康 ｜ 晓玲姐 思涵 昕悦 Gia';
 const POLL_MS = 8000;
 const TWIN_MS = 45_000; // another phone recorded the same pairing this recently: probably the very same point
 const NAME_RE = /^[^\s<>&"'`\\|｜:：,，、]+$/u; // the server's rule for team and player names
