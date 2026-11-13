@@ -165,9 +165,11 @@ function renderRecord(n, all) {
   if (pick.team === null) return;
   const tm = teams()[pick.team];
   const chip = (name) => h('button', { type: 'button', class: 'chip', style: `--c:${color(pick.team)}`, onclick: () => record(name) }, name);
+  // one roster row = one line of buttons (5 across when a row has 5 people), so the two rows stay as she wrote them
+  const cols = `grid-template-columns:repeat(${Math.min(5, Math.max(4, ...tm.groups.map((g) => g.length)))}, minmax(0, 1fr))`;
   $('#assists').replaceChildren(
-    ...tm.groups.filter((g) => g.length).map((g) => h('div', { class: 'chips' }, ...g.map(chip))),
-    h('div', { class: 'chips' }, h('button', { type: 'button', class: 'chip none', onclick: () => record(null) }, '无助攻')));
+    ...tm.groups.filter((g) => g.length).map((g) => h('div', { class: 'chips', style: cols }, ...g.map(chip))),
+    h('div', { class: 'chips', style: cols }, h('button', { type: 'button', class: 'chip none', onclick: () => record(null) }, '无助攻')));
   if (wasHidden) step.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
