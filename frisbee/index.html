@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eef0f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0f12" media="(prefers-color-scheme: dark)">
+<title>飞盘计分</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🥏</text></svg>">
+<style>
+  :root {
+    --bg: #eef0f3; --card: #fff; --ink: #121417; --soft: #5f6b7a; --line: #dfe3e8; --chip: #f1f3f6;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .06);
+    --ok: #12a150; --warn: #e07800; --bad: #d92d20;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0d0f12; --card: #171a1f; --ink: #eceff3; --soft: #9aa4b2; --line: #2a2f37; --chip: #22262d; --shadow: none; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; -webkit-tap-highlight-color: transparent; }
+  button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 32px); }
+
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  h1 { font-size: 22px; margin: 6px 0; letter-spacing: .02em; }
+  .sync { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--soft); font-size: 13px; white-space: nowrap; }
+  .sync i { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
+  .sync.ok i { background: var(--ok); }
+  .sync.busy i { animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .meta { margin: 2px 0 10px; color: var(--soft); font-size: 14px; }
+  .days { display: flex; gap: 6px; overflow-x: auto; margin: 0 -16px 10px; padding: 0 16px; scrollbar-width: none; }
+  .days::-webkit-scrollbar { display: none; }
+  .days button { flex: none; border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+  .days button.on { background: var(--ink); color: var(--card); border-color: var(--ink); }
+
+  .teams { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 8px; }
+  .team { background: var(--card); border-radius: 16px; padding: 9px 6px 10px; text-align: center; box-shadow: var(--shadow); border-top: 5px solid var(--c); }
+  .team .name { font-weight: 700; color: var(--c); font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .team .score { font-size: 46px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .team .score.bump { animation: bump .7s ease-out; }
+  @keyframes bump { 30% { transform: scale(1.28); color: var(--c); } }
+  .team .sub { font-size: 12px; color: var(--soft); }
+  .start { grid-column: 1 / -1; background: var(--card); border-radius: 16px; padding: 18px 16px; text-align: center; box-shadow: var(--shadow); color: var(--soft); }
+  .start button { margin-top: 10px; }
+  .h2h { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .h2h span { background: var(--card); border-radius: 999px; padding: 3px 10px; font-size: 13px; font-variant-numeric: tabular-nums; box-shadow: var(--shadow); }
+
+  .card { background: var(--card); border-radius: 18px; padding: 14px 14px 16px; margin-top: 14px; box-shadow: var(--shadow); }
+  h2 { font-size: 17px; margin: 0 0 10px; }
+  h2 small { color: var(--soft); font-weight: 400; font-size: 13px; margin-left: 4px; }
+  .step + .step { margin-top: 14px; }
+  .lbl { font-size: 13px; color: var(--soft); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+  .link { border: 0; background: none; color: var(--soft); text-decoration: underline; font-size: 13px; padding: 0; }
+  .pairs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .pair { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 5px; min-height: 46px; padding: 6px 4px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--chip); font-size: 15px; min-width: 0; }
+  .pair b { white-space: nowrap; }
+  .pair .vs { color: var(--soft); font-size: 12px; }
+  .pair.on { border-color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); background: var(--card); }
+  .scorers { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; }
+  .scorer { min-height: 64px; border-radius: 14px; border: 2px solid var(--c); background: var(--t); color: var(--c); font-size: 19px; font-weight: 800; padding: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scorer.on { background: var(--c); color: #fff; }
+  .vsScore { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--soft); min-width: 64px; text-align: center; line-height: 1.1; }
+  .vsScore small { display: block; font-size: 11px; font-weight: 400; }
+  .hintline { color: var(--soft); font-size: 14px; padding: 8px 0; }
+  .chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .chips + .chips { margin-top: 6px; }
+  .chip { min-height: 46px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--chip); font-size: 16px; font-weight: 600; padding: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip:active { background: var(--c); color: #fff; border-color: var(--c); }
+  .chip.none { border-style: dashed; color: var(--soft); font-weight: 400; font-size: 14px; }
+
+  .stats { display: grid; gap: 14px; }
+  .thead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; border-bottom: 2px solid var(--c); padding-bottom: 4px; margin-bottom: 6px; }
+  .thead b { color: var(--c); font-size: 15px; }
+  .thead span { color: var(--soft); font-size: 13px; }
+  .prows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; row-gap: 2px; }
+  .prow { display: grid; grid-template-columns: 4.4em minmax(0, 1fr) 1.6em; align-items: center; gap: 6px; font-size: 14px; min-height: 26px; }
+  .prow .pn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .prow .pn small { color: var(--soft); font-size: 11px; }
+  .prow .bar { height: 6px; background: var(--chip); border-radius: 3px; overflow: hidden; }
+  .prow .bar i { display: block; height: 100%; background: var(--c); border-radius: 3px; }
+  .prow .pc { text-align: right; font-variant-numeric: tabular-nums; }
+  .prow.zero { color: var(--soft); }
+  .prow.zero .pc { font-weight: 400; }
+
+  .log { list-style: none; margin: 0; padding: 0; }
+  .log li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .log li:first-child { border-top: 0; }
+  .log .no { flex: none; width: 2.4em; color: var(--soft); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .log .what { flex: 1; min-width: 0; }
+  .log .what b { color: var(--c); }
+  .log .sc { margin-left: 8px; font-size: 13px; color: var(--soft); font-variant-numeric: tabular-nums; }
+  .log .sub { font-size: 13px; color: var(--soft); }
+  .log li.pending .sub { color: var(--warn); }
+  .log .del { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--soft); font-size: 18px; line-height: 1; }
+  .log .emptyrow { display: block; color: var(--soft); font-size: 14px; text-align: center; padding: 12px 0; }
+
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+  .tools button, .start button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 8px 14px; font-size: 14px; color: var(--soft); }
+  body.nogame .needs-game { display: none; }
+
+  .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 18px); transform: translate(-50%, 20px); opacity: 0; transition: opacity .2s, transform .2s; display: flex; align-items: center; gap: 14px; width: max-content; max-width: calc(100% - 32px); background: #1d2127; color: #fff; padding: 10px 12px 10px 16px; border-radius: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, .25); font-size: 15px; z-index: 10; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast button { flex: none; border: 0; background: #ffd43b; color: #1d2127; font-weight: 700; border-radius: 10px; padding: 6px 12px; }
+
+  dialog { border: 0; padding: 0; border-radius: 18px; width: min(520px, calc(100% - 32px)); background: var(--card); color: var(--ink); box-shadow: 0 10px 40px rgba(0, 0, 0, .3); }
+  dialog::backdrop { background: rgba(10, 12, 16, .45); }
+  .dlg { padding: 16px; }
+  .dlg h3 { margin: 0 0 6px; font-size: 18px; }
+  .hint, .note { font-size: 13px; color: var(--soft); margin: 0 0 8px; }
+  .note:empty { display: none; }
+  textarea { width: 100%; min-height: 8.5em; font-family: inherit; font-size: 16px; line-height: 1.6; padding: 10px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--chip); color: var(--ink); resize: vertical; }
+  .preview { display: grid; gap: 6px; margin: 8px 0 4px; }
+  .pv { border-left: 4px solid var(--c); padding: 2px 0 2px 10px; font-size: 13px; }
+  .pv b { color: var(--c); }
+  .err { color: var(--bad); font-size: 14px; margin: 6px 0; }
+  .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  .btns button { border-radius: 12px; padding: 10px 16px; font-weight: 600; border: 1.5px solid var(--line); background: var(--chip); }
+  .btns .primary { background: var(--ink); color: var(--card); border-color: var(--ink); }
+  .btns .primary:disabled { opacity: .4; }
+  .games { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; max-height: 60vh; overflow: auto; }
+  .games button { width: 100%; text-align: left; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--chip); }
+  .games button.on { border-color: var(--ink); }
+  .games span { color: var(--soft); font-size: 13px; }
+  .games em { font-style: normal; font-size: 12px; background: var(--ink); color: var(--card); border-radius: 999px; padding: 1px 8px; }
+  .muted { color: var(--soft); font-size: 14px; padding: 8px 0; }
+</style>
+</head>
+<body class="nogame">
+<div class="wrap">
+  <header class="top">
+    <h1>🥏 飞盘计分</h1>
+    <button id="sync" class="sync busy" type="button" aria-live="polite"><i></i><span>连接中…</span></button>
+  </header>
+  <p id="meta" class="meta">正在连接服务器…</p>
+  <nav id="days" class="days needs-game" hidden></nav>
+  <section id="board" class="teams"></section>
+  <div id="h2h" class="h2h needs-game"></div>
+
+  <section class="card needs-game">
+    <h2>记一分</h2>
+    <div class="step" id="pairStep"><div class="lbl">对战</div><div id="pairs" class="pairs"></div></div>
+    <div class="step"><div class="lbl">哪队得分</div><div id="scorers"></div></div>
+    <div class="step" id="assistStep" hidden><div class="lbl"><span>谁助攻的</span><button id="cancelPick" class="link" type="button">取消</button></div><div id="assists"></div></div>
+  </section>
+
+  <section class="card needs-game"><h2>助攻</h2><div id="stats" class="stats"></div></section>
+  <section class="card needs-game"><h2>每一分 <small id="count"></small></h2><ol id="log" class="log"></ol></section>
+
+  <footer class="tools needs-game">
+    <button id="editBtn" type="button">编辑名单</button>
+    <button id="gamesBtn" type="button">以前的比赛</button>
+    <button id="newBtn" type="button">开新的一场</button>
+  </footer>
+</div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<dialog id="rosterDlg">
+  <form method="dialog" class="dlg">
+    <h3 id="rosterTitle">编辑名单</h3>
+    <p class="hint">一行一队：<b>队名：</b>名字 名字 ｜ 名字 名字。「｜」把一队分成上下两排（可以不写）。</p>
+    <textarea id="rosterText" rows="5" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+    <p id="rosterNote" class="note"></p>
+    <div id="rosterPreview" class="preview"></div>
+    <div class="btns"><button value="cancel" type="submit">取消</button><button id="rosterSave" type="button" class="primary">保存</button></div>
+  </form>
+</dialog>
+
+<dialog id="gamesDlg">
+  <form method="dialog" class="dlg">
+    <h3>以前的比赛</h3>
+    <ul id="gamesList" class="games"></ul>
+    <div class="btns"><button value="cancel" type="submit">关闭</button></div>
+  </form>
+</dialog>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

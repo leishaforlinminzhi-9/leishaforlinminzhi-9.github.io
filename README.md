@@ -7,6 +7,8 @@ https://leishaforlinminzhi-9.github.io/ — one GitHub Pages site for the gift p
 - `poem/` 拼贴诗 — from `~/poem-collage`
 - `photo/` 小狗跳进照片 — from `~/puppy-photo`
 
+- `frisbee/` 飞盘计分 — a score page for her frisbee group (not a gift, so not on the home page): edited right here, no sync; the points are saved on the love-calendar Worker (`/api/frisbee/*`, see that repo's README)
+
 爱的日历 stays in its own repo (`love-calendar`, with its Worker and Netlify) at `/love-calendar/`.
 
-Publish a change: commit it in the project, then `tools/sync.sh <name> --push`.
+Publish a change: commit it in the project, then `tools/sync.sh <name> --push` (for `frisbee/`: commit and push this repo).
