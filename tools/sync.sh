@@ -1,9 +1,9 @@
 #!/bin/bash
 # Copies one gift site from its own project (exactly what is committed there) into this repo's folder of the same name,
 # commits, and with --push publishes it: https://leishaforlinminzhi-9.github.io/<name>/
-#   tools/sync.sh hunt|campus|poem|photo [--push] [-m "message"]
+#   tools/sync.sh hunt|campus|poem|photo|infinite-hotel [--push] [-m "message"]
 # hunt comes from ~/treasure-hunt/release (made by its tools/release.sh: the gated build without the answers);
-# the others from the last commit of ~/campus-25d, ~/poem-collage, ~/puppy-photo (uncommitted files never leave).
+# the others from the last commit of ~/campus-25d, ~/poem-collage, ~/puppy-photo, ~/infinite-hotel (uncommitted files never leave).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 name="${1:-}"; [ $# -gt 0 ] && shift
@@ -14,7 +14,8 @@ case "$name" in
   campus) src="$HOME/campus-25d" ;;
   poem) src="$HOME/poem-collage" ;;
   photo) src="$HOME/puppy-photo" ;;
-  *) echo "usage: tools/sync.sh hunt|campus|poem|photo [--push] [-m msg]"; exit 1 ;;
+  infinite-hotel) src="$HOME/infinite-hotel" ;;
+  *) echo "usage: tools/sync.sh hunt|campus|poem|photo|infinite-hotel [--push] [-m msg]"; exit 1 ;;
 esac
 [ -d "$src/.git" ] || { echo "$src is not a git repo"; exit 1; }
 # unpack into .sync/<name> (git-ignored), then mirror it into <name>/ (rsync --delete drops files that are gone)

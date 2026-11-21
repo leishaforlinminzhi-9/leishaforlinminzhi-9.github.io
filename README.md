@@ -6,6 +6,7 @@ https://leishaforlinminzhi-9.github.io/ — one GitHub Pages site for the gift p
 - `campus/` 清华园 2.5D and the reward film (`film.mp4`) — from `~/campus-25d`
 - `poem/` 拼贴诗 — from `~/poem-collage`
 - `photo/` 小狗跳进照片 — from `~/puppy-photo`
+- `infinite-hotel/` 无限入住 (two phones, one story, six rooms; not on the home page, linked from the love calendar) — from `~/infinite-hotel`
 
 - `frisbee/` 飞盘计分 — a score page for her frisbee group (not a gift, so not on the home page): edited right here, no sync; the points are saved on the love-calendar Worker (`/api/frisbee/*`, see that repo's README)
 
