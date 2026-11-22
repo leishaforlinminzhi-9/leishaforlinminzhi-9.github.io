@@ -316,6 +316,7 @@ function settingsSheet() {
     <p class="muted mt">两部手机显示的『验』不一样,是因为一个人多翻了一章:一起调到一样。</p>
     <span class="grp">序章</span><button class="pick" data-do="prologue" data-arg="0">再看一遍序章</button>
     <span class="grp">身份</span><button class="pick" data-do="rewho">点错了?重新选小狗 / 小猫<small>回到第一页重新点一次,进度不丢。</small></button>
+    <span class="grp">备用方案</span><a class="pick" href="pdf/${S.me}.pdf" target="_blank" rel="noopener">翻页版(PDF):${PEOPLE[S.me].name}版<small>网页版出了问题,就翻这一本:同一个故事,从卡住的那一章接着玩(看目录)。只打开你自己的那一本。</small></a>
     <span class="grp">危险区</span><button class="pick" data-do="reset">清空这部手机上的所有进度<small>钥匙齿和值班日记全部删除。</small></button>`);
 }
 function howSheet() {
@@ -326,7 +327,8 @@ function howSheet() {
     <li>两个人一起按『开演』。每一幕会有旁白广播,有的幕还有只给你一个人的私信。</li>
     <li>看到对方违反戒律、出戏、违反房规:点<b>举报</b>,对方立刻领罚单,当场执行。一间房里被举报得越多,罚单越重(从轻到重,但不超过这一间的温度)。对方不服可以申诉(石头剪刀布),申诉赢了罚单作废,举报人领诬告反坐。自己发现违规,可以<b>自首</b>,从轻。</li>
     <li>结束后揭晓真相,看结局,然后两个人面对面,把这一章长出来的那句话,认真地说给对方听。</li>
-    <li>任何时候说『<b>暂停</b>』,一切立刻停止,罚单换下一张。</li></ol></div>`);
+    <li>任何时候说『<b>暂停</b>』,一切立刻停止,罚单换下一张。</li>
+    <li>网页版出了问题?『设置』里有备用的<b>翻页版(PDF)</b>:同一个故事,一页一页往下翻。</li></ol></div>`);
 }
 
 // ── actions ────────────────────────────────────────────────────────────────────────────────────
